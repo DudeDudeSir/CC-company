@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MovieWorld</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      color: white;
+      text-align: center;
+    }
+
+    header {
+      padding: 30px;
+      animation: fadeDown 1s ease-in-out;
+    }
+
+    @keyframes fadeDown {
+      from {transform: translateY(-50px); opacity: 0;}
+      to {transform: translateY(0); opacity: 1;}
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      color: #9f84ff;
+      text-shadow: 0 0 20px #9f84ff;
+    }
+
+    input[type="text"] {
+      padding: 12px;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1em;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin-top: 20px;
+      margin-left: 10px;
+      background: #9f84ff;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #7f6ddf;
+    }
+
+    h2 {
+      margin-top: 40px;
+      color: #9f84ff;
+    }
+
+    .movies {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 20px;
+    }
+
+    .movie {
+      background: #1a1a2e;
+      padding: 20px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 250px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 0 15px rgba(159, 132, 255, 0.3);
+    }
+
+    .movie:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(159, 132, 255, 0.6);
+    }
+
+    .movie img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .movie h3 {
+      margin: 10px 0 5px;
+    }
+
+    .movie p {
+      margin: 3px 0;
+    }
+
+    .btns {
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 15px;
+      margin: 5px;
+      background: #9f84ff;
+      color: black;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #7f6ddf;
+    }
+
+    .loader {
+      border: 5px solid #ccc;
+      border-top: 5px solid #9f84ff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 30px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MovieWorld</h1>
+    <input type="text" id="searchInput" placeholder="Search for movies..." onkeyup="searchMovies(event)" />
+    <button onclick="triggerSearch()">Search</button>
+  </header>
+
+  <section>
+    <h2>Top & New Movies</h2>
+    <div class="movies" id="topMovies">
+      <!-- Sample Movies -->
+    </div>
+  </section>
+
+  <section>
+    <h2>Search Results</h2>
+    <div class="movies" id="movieList"></div>
+  </section>
+
+  <script>
+    const movieList = document.getElementById('movieList');
+    const topMovies = document.getElementById('topMovies');
+
+    const topSampleMovies = [
+      "Oppenheimer", "Interstellar", "RRR"
+    ];
+
+    // Show top movies on load
+    window.onload = () => {
+      topSampleMovies.forEach(title => {
+        fetch(`https://www.omdbapi.com/?t=${title}&apikey=564727fa`)
+          .then(res => res.json())
+          .then(details => {
+            topMovies.innerHTML += createMovieCard(details);
+          });
+      });
+    };
+
+    function triggerSearch() {
+      const event = new KeyboardEvent('keyup', { key: 'Enter' });
+      searchMovies(event);
+    }
+
+    function searchMovies(event) {
+      if (event.key === "Enter") {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+
+        movieList.innerHTML = "<div class='loader'></div>";
+
+        fetch(`https://www.omdbapi.com/?s=${query}&apikey=564727fa`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.Response === "True") {
+              movieList.innerHTML = '';
+              data.Search.slice(0, 6).forEach(movie => {
+                fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=564727fa`)
+                  .then(res => res.json())
+                  .then(details => {
+                    movieList.innerHTML += createMovieCard(details);
+                  });
+              });
+            } else {
+              movieList.innerHTML = "<p>No results found.</p>";
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            movieList.innerHTML = "<p>Error fetching movies.</p>";
+          });
+      }
+    }
+
+    function createMovieCard(details) {
+      const poster = details.Poster !== "N/A" ? details.Poster : "https://via.placeholder.com/250x370?text=No+Image";
+      const title = encodeURIComponent(details.Title);
+      return `
+        <div class="movie">
+          <img src="${poster}" alt="${details.Title}" />
+          <h3>${details.Title}</h3>
+          <p>Year: ${details.Year}</p>
+          <p>Genre: ${details.Genre}</p>
+          <p>IMDb: ${details.imdbRating}</p>
+          <div class="btns">
+            <a class="btn" href="https://example.com/download/${title}" target="_blank">Download</a>
+            <a class="btn" href="https://www.youtube.com/results?search_query=${title}+trailer" target="_blank">Watch</a>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
