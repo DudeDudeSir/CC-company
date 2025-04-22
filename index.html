@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MovieHub - Best Movie Recommendations</title>
+  <title>MovieHub - Movie Recommendations</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -20,7 +17,6 @@
       text-align: center;
     }
     header h1 {
-      margin: 0;
       color: #00ffc8;
       font-size: 32px;
     }
@@ -33,6 +29,7 @@
       width: 70%;
       border-radius: 5px;
       border: none;
+      outline: none;
     }
     .section-title {
       margin: 30px 20px 10px;
@@ -73,49 +70,72 @@
   <header>
     <h1>MovieHub</h1>
     <div class="search-bar">
-      <input type="text" placeholder="Search for a movie...">
+      <input type="text" id="searchInput" placeholder="Search for a movie...">
     </div>
   </header>
 
-  <div class="section-title">Top Picks</div>
-  <div class="movie-grid">
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Inception" alt="Inception">
-      <h3>Inception</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Interstellar" alt="Interstellar">
-      <h3>Interstellar</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=John+Wick" alt="John Wick">
-      <h3>John Wick</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Avengers" alt="Avengers">
-      <h3>Avengers</h3>
-    </div>
+  <div class="section-title">Trending Movies</div>
+  <div class="movie-grid" id="movieGrid">
+    <!-- Trending movies will be inserted here -->
   </div>
 
-  <div class="section-title">Recommended for You</div>
-  <div class="movie-grid">
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Shutter+Island" alt="Shutter Island">
-      <h3>Shutter Island</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=The+Matrix" alt="The Matrix">
-      <h3>The Matrix</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Dune" alt="Dune">
-      <h3>Dune</h3>
-    </div>
-    <div class="movie-card">
-      <img src="https://via.placeholder.com/200x300?text=Joker" alt="Joker">
-      <h3>Joker</h3>
-    </div>
-  </div>
+  <script>
+    const API_KEY = "YOUR_TMDB_API_KEY_HERE"; // replace this
+    const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+
+    const movieGrid = document.getElementById("movieGrid");
+    const searchInput = document.getElementById("searchInput");
+
+    // Fetch trending movies
+    async function loadTrendingMovies() {
+      const res = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`);
+      const data = await res.json();
+      displayMovies(data.results);
+    }
+
+    // Fetch searched movies
+    async function searchMovies(query) {
+      const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      displayMovies(data.results);
+    }
+
+    // Display movie cards
+    function displayMovies(movies) {
+      movieGrid.innerHTML = '';
+      if (movies.length === 0) {
+        movieGrid.innerHTML = '<p style="text-align:center;">No results found.</p>';
+        return;
+      }
+
+      movies.forEach(movie => {
+        const card = document.createElement('div');
+        card.classList.add('movie-card');
+
+        const image = movie.poster_path ? IMAGE_PATH + movie.poster_path : 'https://via.placeholder.com/200x300?text=No+Image';
+
+        card.innerHTML = `
+          <img src="${image}" alt="${movie.title}">
+          <h3>${movie.title}</h3>
+        `;
+
+        movieGrid.appendChild(card);
+      });
+    }
+
+    // Handle search input
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      if (query.length > 0) {
+        searchMovies(query);
+      } else {
+        loadTrendingMovies();
+      }
+    });
+
+    // Load on page load
+    loadTrendingMovies();
+  </script>
 
 </body>
 </html>
